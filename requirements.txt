@@ -1,0 +1,13 @@
+# 售票主机后台服务 · 运行依赖
+# 部署环境：Windows 10 / Python 3.11+
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.0
+PyYAML==6.0.2
+
+# 声光报警灯 / 票据到位传感器：USB 转串口
+pyserial==3.5
+
+# 看门狗与 Windows 服务化可选
+# pywin32==308 ; 仅当用 python service 方式部署时需要

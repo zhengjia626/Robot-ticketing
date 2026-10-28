@@ -1,0 +1,411 @@
+/* ==========================================================================
+   自贡彩灯节 · 信息显示终端
+   设计基准：1228 × 800（MatePad 11.5 横屏 3:2，DPR 2 下 CSS 视口）
+   整帧 1228×800，由 JS 按 min(w/1228, h/800) 等比 scale，内部全部用 rem(16px)。
+
+   版式参数（方案 11.1 节下限，本文件实际取值）：
+   - 主信息区金额 ≥ 96px → 120px（7.5rem，P-3 取 96px/6rem 以容纳长句）
+   - 操作提示   ≥ 48px → 48px（3rem）        ✅
+   - 正文       ≥ 32px → 32px（2rem）        ✅
+   - 对比度     ≥ 4.5:1 → 实测 ≥ 8:1          ✅
+   - 切换过渡   ≤ 300ms → 280ms               ✅
+
+   高度预算：800 − 步骤条 120 − 状态栏 72 − 主区上下 padding 32 = 576px 可用
+   ========================================================================== */
+
+:root {
+  --bg: #0b0f14;
+  --panel: #131a22;
+  --panel-2: #1a2430;
+  --line: #26333f;
+  --text: #f0f6fc;
+  --muted: #a9bacb;
+  --accent: #ffd666;
+  --accent-2: #ffb020;
+  --ok: #3fb950;
+  --warn: #f0883e;
+  --err: #f85149;
+  --radius: 1rem;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: #05080b;
+  color: var(--text);
+  font-family: system-ui, -apple-system, "PingFang SC", "HarmonyOS Sans SC",
+               "Microsoft YaHei", "Source Han Sans SC", sans-serif;
+  font-size: 16px;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.frame {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 1228px; height: 800px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: radial-gradient(120% 100% at 50% 0%, #16202b 0%, var(--bg) 60%);
+  overflow: hidden;
+}
+
+/* 三块显式指定行号：待机页隐藏步骤条时，主区与状态栏不会错位 */
+.stepbar  { grid-row: 1; }
+.stage    { grid-row: 2; }
+.statusbar { grid-row: 3; }
+
+/* ===================== 步骤条区 ===================== */
+.stepbar {
+  padding: .875rem 3rem .75rem;
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  gap: .5rem;
+  height: 120px;
+}
+/* 待机页无会话，步骤条整体不占位，主区获得完整高度 */
+.stepbar.hidden { display: none; }
+.step {
+  display: flex; align-items: center; gap: .625rem;
+  padding: .5rem 1.125rem;
+  border-radius: 999px;
+  border: 2px solid var(--line);
+  background: var(--panel);
+  color: var(--muted);
+  transition: all .28s ease;
+  white-space: nowrap;
+}
+.step .no {
+  width: 2rem; height: 2rem; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--line); color: var(--text);
+  font-size: 1.125rem; font-weight: 700;
+}
+.step .txt { font-size: 1.375rem; line-height: 1.15; white-space: nowrap; }
+.step .txt small { display: block; font-size: .8125rem; opacity: .7; font-weight: 400; }
+.step.active { border-color: var(--accent-2); background: rgba(255,176,32,.12); color: var(--accent); }
+.step.active .no { background: var(--accent-2); color: #1a1200; }
+.step.done { border-color: var(--ok); color: var(--ok); }
+.step.done .no { background: var(--ok); color: #04140a; }
+.step-arrow { color: #33414f; font-size: 1.375rem; }
+
+/* ===================== 主信息区 ===================== */
+.stage {
+  position: relative;
+  display: grid; place-items: center;
+  padding: 1rem 3rem;
+  overflow: hidden;
+  min-height: 0;
+}
+.page {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1rem;
+  min-height: 0;
+}
+/* 不用 both 填充：动画未执行（或被子帧暂停）时内容仍为正常可见状态 */
+.page.anim { animation: pageIn .28s ease; }
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(1rem); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---------- 通用文字（下限见文件头） ---------- */
+.h1 { font-size: 3.5rem; font-weight: 800; line-height: 1.2; text-align: center; }
+.h2 { font-size: 2rem; font-weight: 700; line-height: 1.25; text-align: center; color: var(--muted); }
+.en { font-size: 1.25rem; color: var(--muted); text-align: center; line-height: 1.35; }
+.body { font-size: 2rem; line-height: 1.45; text-align: center; }        /* 32px */
+.amount {
+  font-size: 7.5rem; font-weight: 800; color: var(--accent);
+  line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+}
+.amount .unit { font-size: 3rem; margin-left: .375rem; color: var(--muted); }
+.tip {
+  font-size: 3rem; font-weight: 700; line-height: 1.3;                    /* 48px */
+  text-align: center; color: var(--text); max-width: 44rem;
+}
+.tip-en { font-size: 1.25rem; color: var(--muted); text-align: center; max-width: 44rem; }
+.card {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 1.25rem 1.75rem;
+}
+.muted { color: var(--muted); }
+
+.badge {
+  display: inline-flex; align-items: center; gap: .625rem;
+  padding: .5rem 1.5rem; border-radius: 999px;
+  font-size: 1.75rem; font-weight: 700;
+}
+.badge.ok { background: rgba(63,185,80,.15); color: var(--ok); border: 2px solid var(--ok); }
+.badge.warn { background: rgba(240,136,62,.15); color: var(--warn); border: 2px solid var(--warn); }
+.badge.err { background: rgba(248,81,73,.15); color: var(--err); border: 2px solid var(--err); }
+
+/* ===================== P-0 待机欢迎页 ===================== */
+.p0-wrap {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 2rem; width: 100%; align-items: center;
+}
+.p0-col { display: flex; flex-direction: column; gap: .875rem; min-width: 0; }
+.p0-title { font-size: 3.5rem; font-weight: 800; line-height: 1.12; }
+.p0-title span {
+  display: block; font-size: 1.125rem; color: var(--accent);
+  font-weight: 600; letter-spacing: .08em; margin-top: .5rem;
+}
+.p0-hours { font-size: 1.375rem; color: var(--muted); }
+.price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .625rem; }
+.price-item {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: .875rem; padding: .75rem 1rem; min-width: 0;
+}
+.price-item .row { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.price-item .nm { font-size: 1.375rem; font-weight: 700; white-space: nowrap; }
+.price-item .nm small { display: block; font-size: .75rem; color: var(--muted); font-weight: 400; }
+.price-item .pr {
+  font-size: 1.75rem; font-weight: 800; color: var(--accent);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.price-item .pr small { font-size: .875rem; color: var(--muted); margin-left: .125rem; font-weight: 400; }
+.price-item .cond {
+  font-size: .875rem; color: var(--muted); margin-top: .25rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.flow-row { display: flex; align-items: flex-start; justify-content: space-between; gap: .25rem; }
+.flow-node { flex: 1; text-align: center; min-width: 0; }
+.flow-ico {
+  width: 3.75rem; height: 3.75rem; margin: 0 auto .5rem;
+  border-radius: 1rem; background: var(--panel-2); border: 2px solid var(--line);
+  display: grid; place-items: center; font-size: 1.75rem;
+}
+.flow-node .lbl { font-size: 1.125rem; font-weight: 700; white-space: nowrap; }
+.flow-node .lbl small { display: block; font-size: .75rem; color: var(--muted); font-weight: 400; }
+.flow-sep { color: #33414f; font-size: 1.25rem; padding-top: 1rem; }
+.p0-welcome { text-align: center; }
+.p0-welcome .body { font-size: 1.5rem; }
+.p0-welcome .meta { font-size: 1.0625rem; color: var(--muted); margin-top: .5rem; }
+
+/* ===================== P-1 需求确认页 ===================== */
+.p1-list { width: 100%; max-width: 50rem; display: flex; flex-direction: column; gap: .5rem; }
+.line-item {
+  display: grid; grid-template-columns: 1fr auto auto;
+  align-items: center; gap: 1.25rem;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: .875rem; padding: .75rem 1.5rem;
+}
+.line-item .nm { font-size: 1.75rem; font-weight: 700; }
+.line-item .nm small { display: block; font-size: 1rem; color: var(--muted); font-weight: 400; }
+.line-item .unit { font-size: 1.375rem; color: var(--muted); white-space: nowrap; }
+.line-item .sub { font-size: 1.75rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.p1-total { display: flex; align-items: baseline; gap: 1rem; justify-content: center; }
+.p1-total .lbl { font-size: 1.75rem; color: var(--muted); }
+
+/* ===================== P-2 身份核验页 ===================== */
+.reader {
+  position: relative; width: 30rem; height: 16rem;
+  border: 3px dashed var(--accent-2); border-radius: 1.25rem;
+  background: rgba(255,176,32,.06);
+  display: grid; place-items: center;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,176,32,.35); }
+  50%     { box-shadow: 0 0 0 1.25rem rgba(255,176,32,0); }
+}
+.idcard {
+  width: 19rem; height: 11rem; border-radius: .875rem;
+  background: linear-gradient(135deg, #2b6cb0, #1a4d80);
+  border: 2px solid #4a90d9;
+  padding: 1rem; display: grid; grid-template-columns: auto 1fr; gap: .875rem;
+  animation: drop 2.4s ease-in-out infinite;
+  box-shadow: 0 .75rem 1.5rem rgba(0,0,0,.5);
+}
+@keyframes drop {
+  0%,100% { transform: translateY(-1.75rem); opacity: .55; }
+  50%     { transform: translateY(0); opacity: 1; }
+}
+.idcard .avatar {
+  width: 4.5rem; height: 5.5rem; border-radius: .375rem;
+  background: rgba(255,255,255,.22); border: 1px solid rgba(255,255,255,.35);
+}
+.idcard .lines { display: flex; flex-direction: column; gap: .625rem; justify-content: center; }
+.idcard .ln { height: .6875rem; border-radius: .25rem; background: rgba(255,255,255,.45); }
+.idcard .ln.w60 { width: 60%; } .idcard .ln.w80 { width: 80%; } .idcard .ln.w45 { width: 45%; }
+.maskline {
+  font-size: 1.875rem; font-weight: 700; letter-spacing: .06em;
+  font-variant-numeric: tabular-nums; color: var(--accent);
+}
+
+/* ===================== P-3 订单确认页 ===================== */
+.p3-main {
+  font-size: 3rem; font-weight: 800; line-height: 1.32;                  /* 48px */
+  text-align: center; max-width: 46rem;
+}
+.p3-main em { color: var(--accent); font-style: normal; }
+.p3-amount {
+  font-size: 6rem; font-weight: 800; color: var(--accent);              /* 96px */
+  line-height: 1; font-variant-numeric: tabular-nums;
+}
+.p3-amount .unit { font-size: 2.5rem; margin-left: .375rem; color: var(--muted); }
+
+/* ===================== P-4 扫码支付页 ===================== */
+.p4-wrap { display: grid; grid-template-columns: auto 1fr; gap: 3rem; align-items: center; }
+.scan-illu {
+  width: 22rem; height: 22rem; position: relative;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: space-between;
+}
+.phone {
+  width: 11rem; height: 15rem; border-radius: 1.75rem;
+  background: var(--panel-2); border: 3px solid var(--line);
+  display: grid; place-items: center;
+  animation: swipe 2.6s ease-in-out infinite;
+  flex: 0 0 auto;
+}
+@keyframes swipe {
+  0%,100% { transform: translateY(-.75rem); }
+  50%     { transform: translateY(.75rem); }
+}
+.phone .qr {
+  width: 6.5rem; height: 6.5rem; border-radius: .625rem;
+  background: repeating-conic-gradient(#e6edf3 0% 25%, #0b0f14 0% 50%) 0 0 / 1.625rem 1.625rem;
+  border: .3125rem solid #e6edf3;
+}
+.scan-window {
+  width: 15rem; height: 4.25rem; border-radius: .625rem;
+  border: 3px solid var(--accent-2); background: rgba(255,176,32,.08);
+  display: grid; place-items: center;
+  font-size: 1.25rem; color: var(--accent); font-weight: 700;
+  flex: 0 0 auto;
+}
+.beam {
+  position: absolute; bottom: 5.25rem; left: 50%; transform: translateX(-50%);
+  width: 13rem; height: .3125rem; border-radius: 999px;
+  background: var(--accent-2); filter: blur(2px);
+  animation: beam 2.6s ease-in-out infinite;
+}
+@keyframes beam { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
+.countdown { width: 100%; max-width: 28rem; }
+.countdown .bar {
+  height: 1rem; border-radius: 999px; background: var(--panel-2);
+  overflow: hidden; border: 1px solid var(--line);
+}
+.countdown .bar i {
+  display: block; height: 100%;
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  transition: width 1s linear;
+}
+.countdown .num { font-size: 1.375rem; color: var(--muted); text-align: right; margin-top: .375rem; }
+.pay-methods { display: flex; gap: .75rem; }
+.pay-methods .m {
+  padding: .625rem 1.375rem; border-radius: 999px;
+  border: 2px solid var(--line); background: var(--panel);
+  font-size: 1.5rem; font-weight: 700;
+}
+.pay-methods .m small { display: block; font-size: .8125rem; color: var(--muted); font-weight: 400; }
+.p4-right { display: flex; flex-direction: column; gap: 1rem; align-items: center; }
+
+/* ===================== P-5 出票中页面 ===================== */
+.printer-illu { width: 26rem; height: 13.5rem; position: relative; }
+.printer {
+  position: absolute; left: 50%; top: 0; transform: translateX(-50%);
+  width: 17rem; height: 5.5rem; border-radius: .875rem .875rem .375rem .375rem;
+  background: var(--panel-2); border: 2px solid var(--line);
+  display: grid; place-items: center; font-size: 1.375rem; color: var(--muted);
+}
+.printer .slot {
+  position: absolute; bottom: -.375rem; left: 50%; transform: translateX(-50%);
+  width: 11rem; height: .625rem; border-radius: 999px; background: #05080b;
+}
+.ticket {
+  position: absolute; left: 50%; top: 5.5rem; transform: translateX(-50%);
+  width: 8rem; height: 5rem; border-radius: .375rem;
+  background: linear-gradient(180deg, #f0f6fc, #c9d6e2);
+  border: 2px dashed #7d8b99;
+  box-shadow: 0 .375rem 1rem rgba(0,0,0,.45);
+  animation: emit 2.8s ease-out infinite;
+}
+/* 门票自出纸口吐出并落入托盘，末帧停留在托盘内（不透明），
+   避免截图或光影变化时出现「空托盘」的误解 */
+/* 全程可见：任何一帧都能看到门票，避免出现「空托盘」误解 */
+@keyframes emit {
+  0%   { transform: translate(-50%, 0);        opacity: 1; }
+  55%  { transform: translate(-50%, 1.75rem);  opacity: 1; }
+  80%  { transform: translate(-50%, 3.25rem);  opacity: 1; }
+  100% { transform: translate(-50%, 3.25rem);  opacity: 1; }
+}
+.tray {
+  position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+  width: 13rem; height: 3.25rem; border-radius: .625rem;
+  border: 3px solid var(--line); background: var(--panel);
+  display: grid; place-items: center; font-size: 1.25rem; color: var(--muted);
+}
+
+/* ===================== P-6 取票完成页 ===================== */
+.done-ico {
+  width: 8rem; height: 8rem; border-radius: 50%;
+  background: rgba(63,185,80,.15); border: 4px solid var(--ok);
+  display: grid; place-items: center; font-size: 4.5rem; color: var(--ok);
+  animation: pop .45s cubic-bezier(.2,1.4,.4,1);
+}
+@keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ===================== P-7 异常提示页 ===================== */
+.err-ico {
+  width: 7rem; height: 7rem; border-radius: 50%;
+  background: rgba(248,81,73,.15); border: 4px solid var(--err);
+  display: grid; place-items: center; font-size: 4rem; color: var(--err);
+}
+.err-reason {
+  font-size: 2.5rem; font-weight: 700; text-align: center;
+  max-width: 44rem; line-height: 1.35;
+}
+.err-action {
+  background: rgba(255,176,32,.1); border: 2px solid var(--accent-2);
+  border-radius: var(--radius); padding: 1rem 2rem;
+  font-size: 2rem; font-weight: 700; text-align: center; max-width: 46rem;
+  color: var(--accent);
+}
+
+/* ===================== 状态反馈区 ===================== */
+.statusbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .75rem 3rem; border-top: 1px solid var(--line);
+  font-size: 1.125rem; color: var(--muted); height: 72px;
+}
+.statusbar .left, .statusbar .right { display: flex; align-items: center; gap: 1rem; }
+.dot { width: .75rem; height: .75rem; border-radius: 50%; background: var(--ok); }
+.dot.off { background: var(--err); }
+.dot.wait { background: var(--warn); }
+
+/* ===================== 遮罩 / 调试条 ===================== */
+.mask {
+  position: fixed; inset: 0; background: rgba(5,8,11,.94);
+  display: grid; place-items: center; z-index: 50;
+}
+.mask[hidden] { display: none; }
+.mask-box { text-align: center; }
+.mask-icon {
+  width: 6rem; height: 6rem; margin: 0 auto 1.5rem; border-radius: 50%;
+  border: 4px solid var(--warn); color: var(--warn);
+  display: grid; place-items: center; font-size: 3rem; font-weight: 800;
+  animation: pulse2 1.6s ease-in-out infinite;
+}
+@keyframes pulse2 { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+.mask-title { font-size: 2.5rem; font-weight: 700; }
+.mask-sub { font-size: 1.5rem; color: var(--muted); margin-top: .5rem; }
+.mask-tip { font-size: 1.75rem; color: var(--accent); margin-top: 1.25rem; }
+
+.devbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+  background: rgba(5,8,11,.92); border-top: 1px solid var(--line);
+  padding: .5rem; display: flex; gap: .375rem; justify-content: center; flex-wrap: wrap;
+}
+.devbar[hidden] { display: none; }
+.devbar button {
+  font: inherit; font-size: .875rem; padding: .375rem .75rem; border-radius: .375rem;
+  border: 1px solid var(--line); background: #1a2430; color: var(--text); cursor: pointer;
+}
+.devbar button.on { background: var(--accent-2); color: #1a1200; font-weight: 700; }

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>机器人通信接口 · 预留调试</title>
+<link rel="stylesheet" href="/terminal/simulator.css">
+<link rel="stylesheet" href="/terminal/robot.css">
+</head>
+<body>
+<div class="rb-wrap">
+
+  <header class="rb-hd">
+    <div class="rb-hd-l">
+      <span class="mdot" id="net"></span>
+      <b>机器人通信接口</b><span class="sub">预留调试台 · Robot Interface (reserved)</span>
+    </div>
+    <nav class="rb-nav">
+      <a href="/ticketing/" target="_blank">票务系统模块 ↗</a>
+      <a href="/terminal/" target="_blank">显示屏模块 ↗</a>
+      <a href="/docs" target="_blank">API 文档 ↗</a>
+    </nav>
+  </header>
+
+  <div class="rb-body">
+    <main class="rb-main">
+
+      <section class="rcard">
+        <div class="ct">接口契约（后台 → 机器人 / 机器人 → 后台）</div>
+        <pre id="contract">加载中…</pre>
+      </section>
+
+      <section class="rcard">
+        <div class="ct">机器人 → 后台（ inbound · 由机器人本体调用）</div>
+        <div class="btns">
+          <button id="btn-hb">发送心跳</button>
+          <button id="btn-alert">发送告警</button>
+        </div>
+        <div class="row">
+          <label>电量%</label><input id="bat" type="number" min="0" max="100" value="88">
+          <label>事件</label>
+          <select id="ev"><option value="arm_fault">arm_fault</option>
+            <option value="estop">estop</option><option value="robot_low_battery">robot_low_battery</option></select>
+          <label>级别</label>
+          <select id="lv"><option value="L1">L1</option><option value="L2">L2</option></select>
+        </div>
+        <div class="hint">心跳 / 告警 / 视觉确认 / 取票 均为机器人侧回调。现场接入人形机器人后，由机器人 SDK 调用这些端点。</div>
+      </section>
+
+      <section class="rcard">
+        <div class="ct">出票视觉确认（/api/print/verify）</div>
+        <div class="row">
+          <label>到位</label><input id="arrived" type="checkbox" checked>
+          <label>实出张数</label><input id="aqty" type="number" min="0" max="9" value="2">
+          <label>缺纸</label><input id="pempty" type="checkbox">
+          <label>置信度</label><input id="conf" type="number" step="0.01" min="0" max="1" value="0.93">
+        </div>
+        <div class="btns"><button id="btn-verify">发送视觉确认</button></div>
+        <div class="hint">方案要求：出票结果不采信票务系统，必须由机器人视觉独立识别。此步在标准流程中由机器人自动回传。</div>
+      </section>
+
+      <section class="rcard">
+        <div class="ct">游客取票（/api/session/ticket-taken）</div>
+        <div class="btns"><button id="btn-take">发送取票完成</button></div>
+        <div class="hint">游客取走门票 → 会话归档复位（S11），可重新开始下一单。</div>
+      </section>
+
+    </main>
+
+    <aside class="rb-side">
+      <section class="rcard">
+        <div class="ct">当前会话</div>
+        <div class="kv"><span>会话号</span><b id="s-sid">—</b></div>
+        <div class="kv"><span>状态 / 页面</span><b id="s-state">S0 / P-0</b></div>
+      </section>
+      <section class="rcard grow">
+        <div class="ct">后台 → 机器人 转发日志（forward_log）</div>
+        <div class="log" id="fwd">—</div>
+      </section>
+      <section class="rcard">
+        <div class="ct">推送日志</div>
+        <div class="log" id="log" style="height:150px"></div>
+      </section>
+    </aside>
+  </div>
+</div>
+<script src="/terminal/robot.js"></script>
+</body>
+</html>

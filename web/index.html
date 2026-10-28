@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0f14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>自贡彩灯节 · 智能售票终端</title>
+<link rel="stylesheet" href="terminal.css">
+</head>
+<body>
+  <div class="frame" id="frame">
+    <header class="stepbar" id="stepbar"></header>
+    <main class="stage" id="stage">
+      <div class="page" id="page"></div>
+    </main>
+    <footer class="statusbar" id="statusbar"></footer>
+  </div>
+
+  <!-- 服务不可达时的降级遮罩：不白屏，给出明确指引 -->
+  <div class="mask" id="mask" hidden>
+    <div class="mask-box">
+      <div class="mask-icon">!</div>
+      <div class="mask-title">正在连接售票服务</div>
+      <div class="mask-sub">Connecting to ticketing service…</div>
+      <div class="mask-tip">请稍候，或按对讲按钮呼叫工作人员</div>
+    </div>
+  </div>
+
+  <!-- 评审/演示用：?preview=P-3 直接预览某页面；?debug=1 显示页面切换条 -->
+  <div class="devbar" id="devbar" hidden></div>
+
+  <script src="terminal.js"></script>
+</body>
+</html>

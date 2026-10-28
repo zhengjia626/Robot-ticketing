@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>票务系统模拟器 · 售票主机后台服务</title>
+<link rel="stylesheet" href="/terminal/simulator.css">
+</head>
+<body>
+<div class="layout">
+
+  <!-- ============ 左：控制台 ============ -->
+  <aside class="console">
+    <header class="chd">
+      <h1>票务系统模拟器</h1>
+      <span class="sub">Ticketing Push Simulator</span>
+    </header>
+
+    <section class="card">
+      <div class="ct">当前会话</div>
+      <div class="kv"><span>会话号</span><b id="s-sid">—</b></div>
+      <div class="kv"><span>状态 / 页面</span><b id="s-state">S0 / P-0</b></div>
+      <div class="kv"><span>场次·票数 / 金额</span><b id="s-order">—</b></div>
+      <div class="kv"><span>订单号</span><b id="s-amt">—</b></div>
+      <div class="kv"><span>激活报警</span><b id="s-alarm">无</b></div>
+    </section>
+
+    <section class="card">
+      <div class="ct">购票配置（生成推送参数）</div>
+      <div class="grid2">
+        <div class="row">
+          <label>场次</label>
+          <select id="cfg-session">
+            <option value="day">日场票</option>
+            <option value="night">夜场票</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>票种</label>
+          <select id="cfg-type">
+            <option value="adult">成人票 ¥150</option>
+            <option value="student">学生票 ¥80</option>
+            <option value="senior">长者票 ¥80</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>票数</label>
+          <input id="cfg-qty" type="number" min="1" max="5" value="2">
+        </div>
+        <div class="row">
+          <label>刷证</label>
+          <input id="cfg-cards" type="number" min="1" max="5" value="2">
+        </div>
+      </div>
+      <div class="hint">刷证张数少于票数 → 触发 E29 多证件提醒</div>
+    </section>
+
+    <section class="card">
+      <div class="ct">流程推送（按 P1–P7 顺序）</div>
+      <div class="steps" id="steps"></div>
+      <div class="btns">
+        <button class="primary" id="btn-auto">▶ 自动跑完整流程</button>
+        <button id="btn-reset">重置会话</button>
+      </div>
+    </section>
+
+    <section class="card grow">
+      <div class="ct">推送日志</div>
+      <div class="log" id="log"></div>
+    </section>
+
+    <details class="card fold">
+      <summary class="ct">异常注入（点击展开）</summary>
+      <div class="btns">
+        <button class="warn" data-err="pay_unknown">支付状态不明 E42</button>
+        <button class="warn" data-err="print_fail">未出票 E59</button>
+        <button class="warn" data-err="sold_out">场次售罄 E39</button>
+        <button class="warn" data-err="echo_fail">键位回读不一致 E32</button>
+        <button class="warn" data-err="paper_empty">打印机缺纸 E51</button>
+        <button class="warn" data-err="short_print">少出票 E58</button>
+        <button data-err="cancel">按【取消】键</button>
+        <button data-err="alarm_off">人工取消报警</button>
+      </div>
+      <div class="hint2">前置步骤未走完时会自动补齐到该异常所需状态。</div>
+    </details>
+
+    <details class="card fold">
+      <summary class="ct">自定义推送（点击展开 · Postman 式）</summary>
+      <select id="cust-type">
+        <option value="key_pressed">key_pressed 按键</option>
+        <option value="id_card_read">id_card_read 刷证</option>
+        <option value="ticket_price">ticket_price 票价</option>
+        <option value="pay_result">pay_result 支付结果</option>
+        <option value="confirm_cancel">confirm_cancel 确认/取消</option>
+        <option value="print_command">print_command 打印</option>
+        <option value="session_sold_out">session_sold_out 售罄</option>
+      </select>
+      <textarea id="cust-json" spellcheck="false"></textarea>
+      <div class="btns">
+        <button id="btn-send">发送</button>
+        <button id="btn-fill">填入示例</button>
+      </div>
+    </details>
+
+  </aside>
+
+  <!-- ============ 右：显示终端实时画面 ============ -->
+  <main class="screen">
+    <div class="screen-hd">
+      <span class="dot" id="net"></span>
+      <span>信息显示终端 · 实时画面</span>
+      <a href="/terminal/?debug=1" target="_blank">单独打开 ↗</a>
+    </div>
+    <div class="screen-body">
+      <iframe id="tv" src="/terminal/" frameborder="0"></iframe>
+    </div>
+  </main>
+
+</div>
+<script src="/terminal/simulator.js"></script>
+</body>
+</html>

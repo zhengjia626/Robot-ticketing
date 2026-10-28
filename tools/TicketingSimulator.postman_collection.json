@@ -1,0 +1,938 @@
+{
+  "info": {
+    "_postman_id": "7e276815-9f47-4258-a128-ae3d01f585bc",
+    "name": "自贡彩灯节 · 票务系统推送模拟（售票主机后台服务）",
+    "description": "按 P1–P7 顺序向售票主机后台服务单向推送 7 类状态消息，模拟票务系统。\n\n使用方式：\n1. 导入本集合，确认集合变量 baseUrl（默认 http://127.0.0.1:8080）\n2. 从「① P1 接待唤醒」开始，自上而下逐条 Send\n3. 每一步的返回体里带 state / page，可对照信息显示终端 http://127.0.0.1:8080/terminal/\n\n说明：票务系统 → 后台服务为单向推送，后台不向票务下发任何数据。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "① P1 接待唤醒",
+      "item": [
+        {
+          "name": "P1 创建会话 · 设备自检",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/session/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "session",
+                "create"
+              ]
+            },
+            "description": "创建售票会话，返回 session_id 并写入集合变量 sessionId"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.session_id) { pm.collectionVariables.set('sessionId', r.session_id); }",
+                  "pm.test('code=0', () => pm.expect(r.code).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "② P2 需求确认",
+      "item": [
+        {
+          "name": "P2 按【日场票】K6",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ticket/push",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ticket",
+                "push"
+              ]
+            },
+            "description": "7 类推送之一：按键后的场次与票种信息",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"key_pressed\",\n  \"session_id\": \"{{sessionId}}\",\n  \"key\": \"K6\",\n  \"session_code\": \"day\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "P2 按【成人票】K4 ×1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ticket/push",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ticket",
+                "push"
+              ]
+            },
+            "description": "每按一次记一张，重复发送可累加",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"key_pressed\",\n  \"session_id\": \"{{sessionId}}\",\n  \"key\": \"K4\",\n  \"ticket_type\": \"adult\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "P2 按【成人票】K4 ×2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ticket/push",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ticket",
+                "push"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"key_pressed\",\n  \"session_id\": \"{{sessionId}}\",\n  \"key\": \"K4\",\n  \"ticket_type\": \"adult\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "P2 票务回传票价",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ticket/push",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ticket",
+                "push"
+              ]
+            },
+            "description": "字段完整且余量充足 → 状态机推进到 S3 待游客确认",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"ticket_price\",\n  \"session_id\": \"{{sessionId}}\",\n  \"session_code\": \"day\",\n  \"total_amount\": 300,\n  \"remaining\": 11998,\n  \"items\": [\n    {\n      \"ticket_type\": \"adult\",\n      \"name\": \"成人票\",\n      \"qty\": 2,\n      \"unit_price\": 150,\n      \"amount\": 300\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "P2→P3 按【确认】锁库存",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ticket/push",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ticket",
+                "push"
+              ]
+            },
+            "description": "锁定订单状态与门票库存，进入身份核验 S4",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"confirm_cancel\",\n  \"session_id\": \"{{sessionId}}\",\n  \"key\": \"confirm\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "③ P3 身份核验",
+      "item": [
+        {
+          "name": "P3 刷第 1 张身份证",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ticket/push",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ticket",
+                "push"
+              ]
+            },
+            "description": "需求 2 张票：只刷 1 张会触发 E29 多证件提醒",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"id_card_read\",\n  \"session_id\": \"{{sessionId}}\",\n  \"id_masked\": \"510302199001011234\",\n  \"age\": 36,\n  \"eligible_type\": \"adult\",\n  \"locked\": true,\n  \"card_count\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "P3 刷第 2 张身份证",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ticket/push",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ticket",
+                "push"
+              ]
+            },
+            "description": "证件数达标 → S5 实名已锁定，终端显示已核验",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"id_card_read\",\n  \"session_id\": \"{{sessionId}}\",\n  \"id_masked\": \"510302199202025678\",\n  \"age\": 34,\n  \"eligible_type\": \"adult\",\n  \"locked\": true,\n  \"card_count\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "P3 生成最终订单",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ticket/push",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ticket",
+                "push"
+              ]
+            },
+            "description": "携带 order_id → S6 订单待确认",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"ticket_price\",\n  \"session_id\": \"{{sessionId}}\",\n  \"order_id\": \"TZ20261027000123\",\n  \"session_code\": \"day\",\n  \"total_amount\": 300,\n  \"remaining\": 11998,\n  \"items\": [\n    {\n      \"ticket_type\": \"adult\",\n      \"name\": \"成人票\",\n      \"qty\": 2,\n      \"unit_price\": 150,\n      \"amount\": 300\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "④ P4 订单确认",
+      "item": [
+        {
+          "name": "P4 按【确认】锁票种数量",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ticket/push",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ticket",
+                "push"
+              ]
+            },
+            "description": "S6 → S7 订单待支付；终端切 P-4 扫码支付页（含倒计时）",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"confirm_cancel\",\n  \"session_id\": \"{{sessionId}}\",\n  \"key\": \"confirm\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⑤ P5 扫码支付",
+      "item": [
+        {
+          "name": "P5 支付成功",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ticket/push",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ticket",
+                "push"
+              ]
+            },
+            "description": "支付成功且流水落库 → S8",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"pay_result\",\n  \"session_id\": \"{{sessionId}}\",\n  \"status\": \"success\",\n  \"trade_no\": \"4200001234202610270001\",\n  \"amount\": 300\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⑥ P6 打印出票",
+      "item": [
+        {
+          "name": "P6 打印指令下发",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ticket/push",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ticket",
+                "push"
+              ]
+            },
+            "description": "注意：票务下发表打印指令即认为成功，出票结果须由机器人视觉确认",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"print_command\",\n  \"session_id\": \"{{sessionId}}\",\n  \"qty\": 2,\n  \"action\": \"print\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "P6 机器人视觉确认出票",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/print/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "print",
+                "verify"
+              ]
+            },
+            "description": "票据落托且数量与订单一致 → S10 票据已就位",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"{{sessionId}}\",\n  \"order_id\": \"TZ20261027000123\",\n  \"arrived\": true,\n  \"actual_qty\": 2,\n  \"expected_qty\": 2,\n  \"paper_empty\": false,\n  \"paper_remaining\": 480,\n  \"vision_confidence\": 0.93\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⑦ P7 取票递票",
+      "item": [
+        {
+          "name": "P7 游客取票 · 归档复位",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/session/ticket-taken?session_id={{sessionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "session",
+                "ticket-taken?session_id={{sessionId}}"
+              ]
+            },
+            "description": "托盘递至取票口且游客取走 → S11 终态，会话复位"
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚠ 异常注入",
+      "item": [
+        {
+          "name": "E42 支付状态不明",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ticket/push",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ticket",
+                "push"
+              ]
+            },
+            "description": "转入 E2，触发 L1 声光报警，禁止重复扣款",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"pay_result\",\n  \"session_id\": \"{{sessionId}}\",\n  \"status\": \"unknown\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E39 场次售罄",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ticket/push",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ticket",
+                "push"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"session_sold_out\",\n  \"session_id\": \"{{sessionId}}\",\n  \"session_code\": \"day\",\n  \"night_available\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E59 未出票",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/print/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "print",
+                "verify"
+              ]
+            },
+            "description": "连续 2 次未识别到票据 → E3 + E59 报警",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"{{sessionId}}\",\n  \"arrived\": false,\n  \"actual_qty\": 0,\n  \"expected_qty\": 2,\n  \"paper_empty\": false,\n  \"vision_confidence\": 0.9\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E51 打印机缺纸",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/print/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "print",
+                "verify"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"{{sessionId}}\",\n  \"arrived\": false,\n  \"actual_qty\": 0,\n  \"expected_qty\": 2,\n  \"paper_empty\": true,\n  \"paper_remaining\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "E32 键位回读不一致",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ticket/push",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ticket",
+                "push"
+              ]
+            },
+            "description": "连续 3 次 → 转人工 + 报警",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"key_pressed\",\n  \"session_id\": \"{{sessionId}}\",\n  \"key\": \"K4\",\n  \"ticket_type\": \"adult\",\n  \"echo_ok\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "按【取消】键",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ticket/push",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ticket",
+                "push"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"confirm_cancel\",\n  \"session_id\": \"{{sessionId}}\",\n  \"key\": \"cancel\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "人工取消报警",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/alarm/cancel?operator=staff",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "alarm",
+                "cancel?operator=staff"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ],
+      "description": "以下请求请**在对应阶段执行**，否则状态机会以 409 拒绝并返回当前允许的事件列表：\n- E42 支付状态不明 → 在 P5 待支付（S7）后执行\n- E39 场次售罄 → 在 P2 需求确认阶段执行\n- E59 未出票 / E51 缺纸 → 在 P6 打印指令下发（S9）后执行\n- E32 键位回读不一致 → 在 P2 采集键位时执行，连发 3 次触发转人工\n- 按【取消】→ 在 S2/S3 为退格，在 S6 退回重做，在 S4/S5/S7 中止会话"
+    },
+    {
+      "name": "📊 查询与运维",
+      "item": [
+        {
+          "name": "查当前会话状态",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/session/state",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "session",
+                "state"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "查下一步动作建议",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/session/{{sessionId}}/next-action",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "session",
+                "{{sessionId}}",
+                "next-action"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "查会话完整轨迹",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/session/{{sessionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "session",
+                "{{sessionId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "查报警",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/alarm/active",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "alarm",
+                "active"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "查运维指标",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ops/metrics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ops",
+                "metrics"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "查设备状态",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ops/devices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ops",
+                "devices"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "运行自检",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ops/selftest?full=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ops",
+                "selftest?full=true"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "重置：关闭会话",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/session/close?session_id={{sessionId}}&reason=postman-reset",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "session",
+                "close"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8080"
+    },
+    {
+      "key": "sessionId",
+      "value": ""
+    }
+  ]
+}

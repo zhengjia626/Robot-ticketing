@@ -1,0 +1,95 @@
+# 售票主机后台服务 · 服务配置
+# 对应方案 v2.4.1 第九章 9.5 / 9.8 / 9.10
+service:
+  name: zigong-lantern-ticketing-host
+  host: 0.0.0.0          # 售票主机静态地址 192.168.10.10
+  port: 8080             # 主服务端口（票务推送 / 机器人 / 显示终端）
+  ops_port: 8081         # 运维端口（指标 / 配置 / 自检），建议仅内网开放
+  log_level: INFO
+  workers: 1             # 会话为内存态单实例，禁止多 worker
+
+# ---------- 运行环境 ----------
+runtime:
+  data_dir: ./data       # 会话持久化目录（崩溃恢复用）
+  log_dir: ./logs        # 日志按日切分，保留 30 天
+  watchdog:
+    enabled: true
+    check_interval_sec: 5
+    restart_within_sec: 10   # 9.2 节：进程崩溃后 10s 内拉起
+
+# ---------- 显示终端（9.5 节） ----------
+display:
+  long_poll_timeout_sec: 25    # 无变更最长挂起 25s，超时返回 304
+  heartbeat_interval_sec: 10   # 终端每 10s 上报一次心跳
+  heartbeat_miss_threshold: 3  # 连续 3 次丢失判离线
+  offline_degrade: voice_only  # 离线降级为纯语音引导
+  page:
+    amount_font_px: 96
+    tip_font_px: 48
+    body_font_px: 32
+    transition_ms: 300
+
+# ---------- 设备接入（第五章） ----------
+devices:
+  printer:
+    type: zebra_zt211
+    # 一次换纸出票 500 张，剩余 5 张触发缺纸语音预警
+    roll_capacity: 500
+    paper_low_threshold: 5
+  id_reader:
+    type: usb_hid
+    port: null
+  scanner:
+    type: deli_aa501
+    port: null
+  ticket_sensor:
+    # 票据到位检测：对射式光电 → 干接点 → USB 转串口
+    enabled: true
+    serial_port: COM3
+    baudrate: 9600
+  alarm_light:
+    enabled: true
+    serial_port: COM4
+    baudrate: 9600
+    auto_off_sec: 0        # 0 表示必须人工取消
+
+# ---------- 机器人通道（9.6 节） ----------
+robot:
+  base_url: http://192.168.10.20:8000   # Cruzr-S2 SDK 服务地址（待厂商确认）
+  heartbeat_timeout_sec: 15
+  # 联调阶段置 false：机器人心跳通道未打通时不阻断售票；
+  # 收到过心跳后即按 15s 超时严格判定。现场联调完成后改 true。
+  require_heartbeat: false
+  push_enabled: true       # 后台 → 机器人 状态转发
+  # 注：按 9.6 节批注，动作编排由机器人本体维护，
+  #     后台仅转发票务状态，不直接下发动作指令。
+  forward_events:
+    - ticket_push
+    - session_state
+    - alarm
+
+# ---------- 票务系统推送（9.3 节：单向，后台不下发数据） ----------
+ticketing:
+  push_token: "changeme-local-only"
+  allowed_sources:            # 局域网白名单
+    - 127.0.0.1
+    - 192.168.10.0/24
+  state_confidence:
+    api_push: 0.95            # 接口推送最高置信度
+    device_event: 0.70        # 外设事件辅助校验
+    robot_vision: 0.80        # 机器人视觉识别
+
+# ---------- 日志与监控（9.7 节） ----------
+logging:
+  level: INFO
+  retention_days: 30
+  mask_id_card: true          # 身份证仅保留前 6 位与后 2 位
+  # 注：业务日志归票务系统与机器人本体；本服务只存系统层与设备状态日志
+  business_log_enabled: false
+
+alarm:
+  levels:
+    L1: [service_down, pay_channel_error]
+    L2: [action_success_rate_low, session_duration_over]
+    L3: [info_only]
+  repeat_escalate: true

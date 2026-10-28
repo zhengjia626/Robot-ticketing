@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>整体业务流程核查 · 模块二</title>
+<link rel="stylesheet" href="/terminal/simulator.css">
+<link rel="stylesheet" href="/terminal/verify.css">
+</head>
+<body>
+<div class="vf-wrap">
+
+  <!-- 顶栏：模块导航 -->
+  <header class="vf-hd">
+    <div class="vf-hd-l">
+      <span class="mdot" id="net"></span>
+      <b>整体业务流程核查</b><span class="sub">Verification · 模块二 · 独立于票务系统的把关服务</span>
+    </div>
+    <nav class="vf-nav">
+      <a href="/ticketing/" target="_blank">票务系统模块 ↗</a>
+      <a href="/terminal/" target="_blank">显示屏模块 ↗</a>
+      <a href="/robot/" target="_blank">机器人接口 ↗</a>
+      <a href="/" target="_blank">运维看板 ↗</a>
+      <a href="/docs" target="_blank">API 文档 ↗</a>
+    </nav>
+  </header>
+
+  <div class="vf-body">
+
+    <!-- ============ 左：游客 → 人形机器人 信息输入 ============ -->
+    <main class="vf-col">
+      <section class="dcard">
+        <div class="ct">① 游客 → 人形机器人 信息输入（模拟现场语音上报）</div>
+        <div class="hint">游客把购票意图说给人形机器人；机器人把这条消息上报给后台。
+          其中「确认购票」会解除核查服务对确认键的拦截。
+          此界面只负责上报意图，不碰票务系统键盘。</div>
+
+        <div class="row">
+          <label>意图</label>
+          <select id="intent">
+            <option value="confirm">确认购票（解锁确认键）</option>
+            <option value="cancel">取消购票</option>
+            <option value="query">咨询（如价格/场次）</option>
+            <option value="other">其他</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>内容</label>
+          <input id="vtext" type="text" placeholder="例如：我要两张成人夜场票，确认购买"
+                 style="flex:1">
+        </div>
+        <div class="btns">
+          <button class="primary" id="btn-send">发送给人形机器人</button>
+          <button id="btn-confirm-only">快捷：上报「确认购票」</button>
+          <button id="btn-clear">清空消息</button>
+        </div>
+      </section>
+
+      <section class="dcard grow">
+        <div class="ct">游客消息流（已上报至核查服务）</div>
+        <div class="log" id="vlog"></div>
+      </section>
+    </main>
+
+    <!-- ============ 右：整体业务流程核查 ============ -->
+    <aside class="vf-side">
+      <section class="dcard">
+        <div class="ct">当前会话</div>
+        <div class="kv"><span>会话号</span><b id="s-sid">—</b></div>
+        <div class="kv"><span>状态 / 页面</span><b id="s-state">S0 / P-0</b></div>
+        <div class="kv"><span>场次 · 票数 · 金额</span><b id="s-order">—</b></div>
+        <div class="kv"><span>核查模式</span><b id="s-mode">宽松（未上报过游客消息）</b></div>
+      </section>
+
+      <section class="dcard">
+        <div class="ct">② 整体业务流程核查清单</div>
+        <div id="checklist" class="checklist"></div>
+      </section>
+
+      <section class="dcard">
+        <div class="ct">核查结论</div>
+        <div id="verdict" class="verdict warn">等待会话与核查数据…</div>
+        <div class="btns" style="margin-top:10px">
+          <button class="primary big" id="btn-press-k2">🤖 机器人代按确认键 (K2)</button>
+        </div>
+        <div class="hint">点击后，人形机器人操作票务系统外接键盘 K2。后台收到按键即视为
+          「机器人已收到游客确认」，但【确认是否放行】由上方核查服务判定——
+          不通过则被拦截并返回 409，票务系统状态不变。</div>
+      </section>
+
+      <section class="dcard grow">
+        <div class="ct">操作日志</div>
+        <div class="log" id="log"></div>
+      </section>
+    </aside>
+  </div>
+</div>
+<script src="/terminal/verify.js"></script>
+</body>
+</html>

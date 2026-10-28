@@ -1,0 +1,29 @@
+# ===== Python / 虚拟环境 =====
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.installed.cfg
+
+# ===== 运行时产物（每次启动都会变，不入库）=====
+logs/
+data/
+*.log
+*.log.*
+host.log*
+device.log*
+
+# ===== 编辑器 / 系统 =====
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# ===== 测试与缓存 =====
+.pytest_cache/
+.coverage
+htmlcov/

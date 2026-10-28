@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>票务系统模块 · 设备控制台</title>
+<link rel="stylesheet" href="/terminal/simulator.css">
+<link rel="stylesheet" href="/terminal/ticketing.css">
+</head>
+<body>
+<div class="tk-wrap">
+
+  <!-- 顶栏：模块导航 -->
+  <header class="tk-hd">
+    <div class="tk-hd-l">
+      <span class="mdot" id="net"></span>
+      <b>票务系统模块</b><span class="sub">设备控制台 · Ticketing System Console</span>
+    </div>
+    <nav class="tk-nav">
+      <a href="/terminal/" target="_blank">显示屏模块 ↗</a>
+      <a href="/robot/" target="_blank">机器人接口 ↗</a>
+      <a href="/" target="_blank">运维看板 ↗</a>
+      <a href="/docs" target="_blank">API 文档 ↗</a>
+    </nav>
+  </header>
+
+  <div class="tk-body">
+    <!-- ============ 左：设备面板 ============ -->
+    <main class="tk-devices">
+
+      <section class="dcard">
+        <div class="ct">会话控制（票务系统发起）</div>
+        <div class="btns">
+          <button class="primary" id="btn-create">① 开始新会话（设备唤醒）</button>
+          <button id="btn-reset">重置会话</button>
+        </div>
+        <div class="hint">游客走近 → 票务系统建立会话（对应 P1 设备自检）。后续所有设备动作都挂在这个会话上。</div>
+      </section>
+
+      <section class="dcard">
+        <div class="ct">键盘（实体键 K1–K7）</div>
+        <div class="kbd" id="kbd"></div>
+        <label class="chk"><input type="checkbox" id="echo-bad"> 模拟键位回读异常（echo_ok=false → 限次重试 E32）</label>
+        <div class="hint">快捷键：Esc=K1 取消 · Enter=K2 确认 · Alt+X/K3 学生票 · Alt+C/K4 成人票 · Alt+Z/K5 长者票 · Alt+R/K6 日场 · Alt+Y/K7 夜场</div>
+      </section>
+
+      <section class="dcard">
+        <div class="ct">身份证扫描器（实名核验）</div>
+        <div class="row">
+          <label>年龄</label>
+          <input id="id-age" type="number" min="1" max="120" value="36">
+          <label>资格</label>
+          <select id="id-elig">
+            <option value="adult">成人</option>
+            <option value="student">学生</option>
+            <option value="senior">长者</option>
+            <option value="zero">零元(70+)</option>
+          </select>
+        </div>
+        <div class="btns">
+          <button id="btn-id">读取身份证</button>
+          <button id="btn-id-x3">连续读取 ×3</button>
+        </div>
+        <div class="hint">每读一张推一条 id_card_read；买 N 张需刷 N 张证。
+          <strong>证件读齐后自动进入扫码支付环节（S7）</strong>——由票务系统自动生成订单并代按确认键。
+          临时关闭「年龄 ↔ 购票需求」校验（不再回传资格字段）。最后读取的脱敏证号：<b id="last-id">—</b></div>
+      </section>
+
+      <section class="dcard">
+        <div class="ct">二维码 / 付款码扫描器</div>
+        <div class="row">
+          <label>支付结果</label>
+          <select id="pay-status">
+            <option value="success">支付成功</option>
+            <option value="fail">支付失败</option>
+            <option value="unknown">状态不明(转E2)</option>
+          </select>
+        </div>
+        <div class="btns">
+          <button id="btn-pay">扫描付款码</button>
+        </div>
+        <div class="hint">扫码动作由票务系统完成支付，再向后台回报 pay_result。最近条码：<b id="last-code">—</b></div>
+      </section>
+
+      <section class="dcard">
+        <div class="ct">打印机（凭证打印）</div>
+        <div class="row">
+          <label>纸张余量</label><b id="paper">—</b>
+          <label>状态</label><b id="prn-on">—</b>
+        </div>
+        <div class="btns">
+          <button id="btn-print">下发打印指令</button>
+          <button id="btn-refill">补纸(演示)</button>
+        </div>
+        <div class="hint">打印由票务系统下发 print_command → 后台驱动主机打印机。出票视觉确认由机器人模块完成。</div>
+      </section>
+
+      <section class="dcard">
+        <div class="ct">票务系统计算（锁价 / 生成订单）</div>
+        <div class="btns">
+          <button id="btn-price">回传票价（锁价 S2→S3）</button>
+          <button id="btn-order">生成最终订单（带 order_id）</button>
+        </div>
+        <div class="hint">各票种单价已内置；选完场次与票种后<strong>总价会自动算好并回传后台</strong>（S2→S3，屏上显示金额），无需手动点上方按钮。该按钮保留用于强制重算或补单。</div>
+      </section>
+
+      <section class="dcard">
+        <div class="btns">
+          <button class="primary" id="btn-auto">▶ 一键设备演示（完整购票）</button>
+        </div>
+        <div class="hint">自动依次驱动：唤醒→日场→成人票×2→锁价→确认→刷证×2→生成订单→确认→扫码支付→打印；随后的「视觉确认 / 取票」由机器人模块完成，可到 /robot/ 操作。</div>
+      </section>
+
+    </main>
+
+    <!-- ============ 右：状态 + 日志 ============ -->
+    <aside class="tk-side">
+      <section class="dcard">
+        <div class="ct">当前会话</div>
+        <div class="kv"><span>会话号</span><b id="s-sid">—</b></div>
+        <div class="kv"><span>状态 / 页面</span><b id="s-state">S0 / P-0</b></div>
+        <div class="kv"><span>场次 · 票数</span><b id="s-order">—</b></div>
+        <div class="kv"><span>订单号</span><b id="s-amt">—</b></div>
+        <div class="kv"><span>已刷证件</span><b id="s-cards">—</b></div>
+        <div class="kv"><span>激活报警</span><b id="s-alarm">无</b></div>
+      </section>
+
+      <section class="dcard grow">
+        <div class="ct">推送日志</div>
+        <div class="log" id="log"></div>
+      </section>
+    </aside>
+  </div>
+</div>
+<script src="/terminal/ticketing.js"></script>
+</body>
+</html>

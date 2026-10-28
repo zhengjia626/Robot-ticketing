@@ -1,0 +1,227 @@
+{
+  "version": "1.0.0.tmp5m",
+  "updated_at": "2026-10-28T22:59:59+08:00",
+  "note": "业务规则文件（方案 9.8 节）。支持热更新：POST /api/ops/rule/reload 或修改本文件。票价与适用条件标注【待业主确认】的以票务系统返回为准。",
+  "ticket_types": {
+    "student": {
+      "code": "student",
+      "name": "学生票",
+      "name_en": "Student",
+      "price": 80,
+      "key": "K3",
+      "conditions": [
+        "18 岁以下",
+        "全日制本科及以下学历且持学生证（研究生/成人教育/业余大学/夜大函大不适用）",
+        "身高 1.3m 以下儿童免票，超过 1.3m 按学生票处理"
+      ]
+    },
+    "adult": {
+      "code": "adult",
+      "name": "成人票",
+      "name_en": "Adult",
+      "price": 150,
+      "key": "K4",
+      "conditions": [
+        "无特殊限制，默认票种"
+      ]
+    },
+    "senior": {
+      "code": "senior",
+      "name": "长者票",
+      "name_en": "Senior",
+      "price": 80,
+      "key": "K5",
+      "conditions": [
+        "65 周岁（含）至 70 周岁"
+      ]
+    },
+    "zero": {
+      "code": "zero",
+      "name": "零元票",
+      "name_en": "Free",
+      "price": 0,
+      "key": "K5",
+      "conditions": [
+        "70 周岁（含）以上；同样需要出票，凭票入园"
+      ]
+    }
+  },
+  "age_rules": {
+    "free_height_m": 1.3,
+    "student_max_age": 18,
+    "senior_min_age": 65,
+    "zero_min_age": 70,
+    "child_age_query_threshold": 8,
+    "note": "年龄→票种资格由票务系统判定，后台只读取结果并转发；此处仅用于本地一致性校验与显示。"
+  },
+  "sessions": {
+    "day": {
+      "code": "day",
+      "name": "日场票",
+      "name_en": "Day Session",
+      "start": "09:00",
+      "end": "18:00",
+      "key": "K6"
+    },
+    "night": {
+      "code": "night",
+      "name": "夜场票",
+      "name_en": "Night Session",
+      "start": "18:00",
+      "end": "21:00",
+      "key": "K7"
+    },
+    "default_rule": {
+      "08:00-12:00": "day",
+      "12:00-18:00": "ask",
+      "18:00-21:00": "night",
+      "note": "白天上午未说明则默认日场；12:00 之后必须主动询问；18:00 之后默认夜场"
+    },
+    "ending_reminder": {
+      "day_after": "17:30",
+      "night_after": "20:30"
+    },
+    "capacity": {
+      "day": 40000,
+      "note": "日场总数控制示例值；实际余量以票务系统推送为准"
+    }
+  },
+  "keymap": {
+    "K1": {
+      "cap": "取消",
+      "type": "single",
+      "value": "Esc",
+      "semantic": "关闭弹窗；提交前退格减一；提交后清零；中止会话"
+    },
+    "K2": {
+      "cap": "确认",
+      "type": "single",
+      "value": "Enter",
+      "semantic": "提交订单、锁定票种与数量、进入支付页、触发打印"
+    },
+    "K3": {
+      "cap": "学生票",
+      "type": "hotkey",
+      "value": "Alt+X",
+      "semantic": "票种检索并选中学生票，数量加一"
+    },
+    "K4": {
+      "cap": "成人票",
+      "type": "hotkey",
+      "value": "Alt+C",
+      "semantic": "票种检索并选中成人票，数量加一"
+    },
+    "K5": {
+      "cap": "长者票",
+      "type": "hotkey",
+      "value": "Alt+Z",
+      "semantic": "票种检索并选中长者票，数量加一并校验年龄条件"
+    },
+    "K6": {
+      "cap": "日场",
+      "type": "hotkey",
+      "value": "Alt+R",
+      "semantic": "场次检索并选中日场票"
+    },
+    "K7": {
+      "cap": "夜场",
+      "type": "hotkey",
+      "value": "Alt+Y",
+      "semantic": "场次检索并选中夜场票"
+    },
+    "key_interval_ms": 1000
+  },
+  "timeouts": {
+    "P1_wake_wait_sec": 300,
+    "P2_need_rounds_max": 3,
+    "P2_key_interval_sec": 1.0,
+    "P2_key_retry_max": 3,
+    "P3_card_place_wait_sec": 300,
+    "P3_card_retry_max": 3,
+    "P3_multi_card_remind_interval_sec": 10,
+    "P3_multi_card_remind_max": 3,
+    "P4_order_confirm_wait_sec": 300,
+    "P5_pay_wait_sec": 300,
+    "P5_paycode_retry_max": 2,
+    "P5_pay_recheck_interval_sec": 2,
+    "P5_pay_recheck_max": 5,
+    "P6_print_wait_sec": 300,
+    "P6_paper_low_threshold": 5,
+    "P7_tear_retry_max": 2,
+    "P7_pickup_wait_sec": 300,
+    "session_total_max_sec": 300
+  },
+  "prompts": {
+    "welcome": "您好，欢迎来到自贡彩灯节，我是智能售票员，请问需要购票吗？",
+    "need_confirm": "为您购买{session}成人票{qty}张，共{amount}，请确认。",
+    "ask_session": "请问您购买日场票还是夜场票？",
+    "session_ending": "日场将于 18 点结束，建议购买夜场票。",
+    "session_sold_out_night_available": "本场次门票已卖完，是否购买夜场票？",
+    "session_sold_out_all": "本场次门票已卖完，请明日再来！",
+    "child_remind": "身高 1 米 3 以下不用买票，请问小朋友身高超过 1 米 3 了吗？",
+    "student_cert_remind": "您已满 18 岁，购买学生票请出示全日制本科及以下学生证。",
+    "id_card_guide": "请将身份证平放在读卡区，读卡成功后请取回。",
+    "multi_card_remind": "还需核验 {n} 位游客的身份证，请刷下一张。",
+    "no_id_card": "您未携带身份证，请到人工窗口办理。",
+    "order_confirm": "{types}，总共{amount}，请扫码支付！",
+    "pay_guide": "请打开付款码，对准扫码窗口支付{amount}。",
+    "pay_fail": "扫码不成功，请采用微信或支付宝支付码。",
+    "pay_cancel_confirm": "多次扫码未成功，请问是否取消本次购票？",
+    "deliver": "您的门票已出票，请收好，祝您游览愉快。",
+    "finish": "请从 3 号口进入，祝您玩得开心。",
+    "paper_low": "门票纸张即将用尽，请工作人员尽快处理。",
+    "display_order_confirm": "{types}，总共{amount}，请确认，如无异议，请扫码支付！"
+  },
+  "display_pages": {
+    "P-0": {
+      "name": "待机欢迎页",
+      "trigger": "无会话或服务空闲"
+    },
+    "P-1": {
+      "name": "需求确认页",
+      "trigger": "会话建立，进入需求确认阶段"
+    },
+    "P-2": {
+      "name": "身份核验页",
+      "trigger": "需求已确认，等待读卡"
+    },
+    "P-3": {
+      "name": "订单确认页",
+      "trigger": "身份核验通过，付款之前"
+    },
+    "P-4": {
+      "name": "扫码支付页",
+      "trigger": "游客确认无异议或已按【确认】"
+    },
+    "P-5": {
+      "name": "出票中页面",
+      "trigger": "支付成功，正在打印"
+    },
+    "P-6": {
+      "name": "取票完成页",
+      "trigger": "票据已递出并被取走"
+    },
+    "P-7": {
+      "name": "异常提示页",
+      "trigger": "任一环节失败或超时"
+    }
+  },
+  "state_page_map": {
+    "S0": "P-0",
+    "S1": "P-1",
+    "S2": "P-1",
+    "S3": "P-1",
+    "S4": "P-2",
+    "S5": "P-2",
+    "S6": "P-3",
+    "S7": "P-4",
+    "S8": "P-5",
+    "S9": "P-5",
+    "S10": "P-6",
+    "S11": "P-6",
+    "E1": "P-7",
+    "E2": "P-7",
+    "E3": "P-7",
+    "E4": "P-7"
+  }
+}
